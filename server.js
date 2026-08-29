@@ -7,7 +7,7 @@ const SEAT_COUNT=10,BUY_IN=300000,WIN_TARGET=5000000,ELIMINATION=5000,BET_MS=120
 const SUITS=["♠","♥","♦","♣"],RANKS=["A","2","3","4","5","6","7","8","9","10","J","Q","K"],MULTIS=[2,3,5,8];
 const freshState=()=>({phase:"waiting",round:0,deadline:null,lightning:null,cards:null,result:null,message:"방장이 대회를 준비하고 있습니다",winner:null,winLogs:[],roundWinners:[],seats:Array(SEAT_COUNT).fill(null),started:false});
 let state=freshState(),timer=null;const clients=new Map();
-app.use(express.static("public"));app.get("/health",(_,res)=>res.json({ok:true,players:state.seats.filter(Boolean).length,phase:state.phase}));
+app.use(express.static("public",{setHeaders:res=>res.setHeader("Cache-Control","no-store, no-cache, must-revalidate")}));app.get("/health",(_,res)=>res.json({ok:true,players:state.seats.filter(Boolean).length,phase:state.phase}));
 const clean=v=>String(v||"").replace(/[<>]/g,"").trim().slice(0,14),emptyBet=()=>({dragon:0,tie:0,suited:0,tiger:0});
 const publicPlayer=p=>p&&({id:p.id,nickname:p.nickname,balance:p.balance,connected:p.connected,ready:p.ready,eliminated:p.eliminated,bet:p.bet,lastPay:p.lastPay||0});
 const snapshot=()=>({...state,seats:state.seats.map(publicPlayer),serverNow:Date.now()}),emit=()=>io.emit("state",snapshot());

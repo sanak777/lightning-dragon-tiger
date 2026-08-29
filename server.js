@@ -24,8 +24,8 @@ function settle(d,t,l){
   if(result==="tiger"&&b.tiger){const m=tigerHit?l.multi:1;pay=b.tiger*(1+m);area="호";detail=tigerHit?`호 라이트닝 ${m}배 적중`:"호 1:1 적중"}
   if(result==="tie"||result==="suited"){
    const refund=Math.floor((b.dragon+b.tiger)/2);pay+=refund;
-   if(b.tie){const hits=[d,t].filter(c=>c.suit===l.suit).length,m=hits?l.multi:1;pay+=b.tie*11*m;area="일반 무";detail=m>1?`일반 무 11배 × 라이트닝 ${m}배`:"일반 무 11배 적중"}
-   if(result==="suited"&&b.suited){const m=d.suit===l.suit?l.multi:1;pay+=b.suited*50*m;area=area?area+" + 적절한 무":"적절한 무";detail+=(detail?" · ":"")+(m>1?`적절한 무 50배 × 라이트닝 ${m}배`:"적절한 무 50배 적중")}
+   if(b.tie){const hits=[d,t].filter(c=>c.suit===l.suit).length,m=hits?l.multi:1;pay+=b.tie*6.5*m;area="일반 무";detail=m>1?`일반 무 6.5배 × 라이트닝 ${m}배`:"일반 무 6.5배 적중"}
+   if(result==="suited"&&b.suited){const m=d.suit===l.suit?l.multi:1;pay+=b.suited*20*m;area=area?area+" + 적절한 무":"적절한 무";detail+=(detail?" · ":"")+(m>1?`적절한 무 20배 × 라이트닝 ${m}배`:"적절한 무 20배 적중")}
    if(!area&&refund){area="용·호 타이 반환";detail="본 베팅 50% 반환"}
   }
   p.lastPay=Math.floor(pay);p.balance+=p.lastPay;p.bet=emptyBet();p.ready=false;p.eliminated=p.balance<ELIMINATION;

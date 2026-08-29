@@ -28,7 +28,7 @@ function render(){if(!state)return;const mine=me();renderSeats();renderLogs();$(
  previous={phase:state.phase,lightning:state.lightning?JSON.stringify(state.lightning):null,dragon:state.cards?.dragon?JSON.stringify(state.cards.dragon):null,tiger:state.cards?.tiger?JSON.stringify(state.cards.tiger):null};
 }
 socket.on("state",s=>{serverOffset=s.serverNow-Date.now();state=s;render()});
-socket.on("connect",()=>{const token=localStorage.getItem("ldt_token"),nickname=localStorage.getItem("ldt_name");if(token&&nickname)socket.emit("join",{nickname,token},r=>{if(r.ok){meId=r.id;localStorage.setItem("ldt_id",r.id);$("#introScreen").classList.add("hide")}})});
+socket.on("connect",()=>{const token=localStorage.getItem("ldt_token"),nickname=localStorage.getItem("ldt_name");$("#introScreen").classList.remove("hide");if(token&&nickname)socket.emit("join",{nickname,token},r=>{if(r.ok){meId=r.id;localStorage.setItem("ldt_id",r.id)}})});
 socket.on("kicked",()=>resetClient("관리자에 의해 추방되었습니다"));socket.on("roomReset",()=>resetClient("게임 종료 · 방폭 완료"));
 function resetClient(message){localStorage.removeItem("ldt_token");localStorage.removeItem("ldt_name");localStorage.removeItem("ldt_id");meId="";$("#victoryCast").classList.remove("show");$("#introScreen").classList.remove("hide");$("#status").textContent=message}
 $("#victoryCast").onclick=()=>{$("#victoryCast").classList.remove("show");clearTimeout(winnerTimer)};

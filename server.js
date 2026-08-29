@@ -5,7 +5,8 @@ const app=express(),server=http.createServer(app),io=new Server(server,{pingTime
 const PORT=process.env.PORT||3000,ADMIN_PASSWORD="8959";
 const SEAT_COUNT=10,BUY_IN=300000,WIN_TARGET=5000000,ELIMINATION=5000,BET_MS=12000;
 const SUITS=["♠","♥","♦","♣"],RANKS=["A","2","3","4","5","6","7","8","9","10","J","Q","K"],MULTIS=[2,3,5,8];
-const freshState=()=>({phase:"waiting",round:0,deadline:null,lightning:null,cards:null,result:null,message:"방장이 대회를 준비하고 있습니다",winner:null,winLogs:[],roundWinners:[],road:[],seats:Array(SEAT_COUNT).fill(null),started:false});
+const seededRoad=()=>Array.from({length:20},(_,i)=>{const dValue=crypto.randomInt(1,14),tValue=crypto.randomInt(1,14),dSuit=SUITS[crypto.randomInt(0,4)],tSuit=SUITS[crypto.randomInt(0,4)],result=dValue>tValue?"dragon":dValue<tValue?"tiger":dSuit===tSuit?"suited":"tie";return{round:i+1,result,lightning:crypto.randomInt(0,5)===0}});
+const freshState=()=>({phase:"waiting",round:20,playedRounds:0,deadline:null,lightning:null,cards:null,result:null,message:"이전 20게임 그림장 준비 완료 · 방장 시작 대기",winner:null,winLogs:[],roundWinners:[],road:seededRoad(),seats:Array(SEAT_COUNT).fill(null),started:false});
 let state=freshState(),timer=null;const clients=new Map();
 app.use(express.static("public",{setHeaders:res=>res.setHeader("Cache-Control","no-store, no-cache, must-revalidate")}));app.get("/health",(_,res)=>res.json({ok:true,players:state.seats.filter(Boolean).length,phase:state.phase}));
 const clean=v=>String(v||"").replace(/[<>]/g,"").trim().slice(0,14),emptyBet=()=>({dragon:0,tie:0,suited:0,tiger:0});
@@ -14,7 +15,7 @@ const snapshot=()=>({...state,seats:state.seats.map(publicPlayer),serverNow:Date
 const draw=()=>{const value=crypto.randomInt(1,14);return{value,rank:RANKS[value-1],suit:SUITS[crypto.randomInt(0,4)]}};
 const player=socket=>{const id=clients.get(socket.id);return state.seats.find(p=>p?.id===id)};
 const clearBet=(p,refund=true)=>{if(refund){const stake=Object.values(p.bet).reduce((a,b)=>a+b,0);p.balance+=Math.floor(stake*1.2)}p.bet=emptyBet();p.ready=false};
-function chooseWinner(){const alive=state.seats.filter(p=>p&&!p.eliminated&&p.balance>=ELIMINATION),targets=alive.filter(p=>p.balance>=WIN_TARGET).sort((a,b)=>b.balance-a.balance);return targets[0]||(state.started&&state.round>0&&alive.length===1?alive[0]:null)}
+function chooseWinner(){const alive=state.seats.filter(p=>p&&!p.eliminated&&p.balance>=ELIMINATION),targets=alive.filter(p=>p.balance>=WIN_TARGET).sort((a,b)=>b.balance-a.balance);return targets[0]||(state.started&&state.playedRounds>0&&alive.length===1?alive[0]:null)}
 function finishTournament(p){clearTimeout(timer);state.winner={id:p.id,nickname:p.nickname,balance:p.balance,reason:p.balance>=WIN_TARGET?"5,000,000원 이상 최고 보유금 달성":"최후의 1인"};state.phase="finished";state.deadline=null;state.message=`🏆 ${p.nickname} 우승 · ${p.balance.toLocaleString()}원`;emit()}
 function settle(d,t,l){
  const result=d.value>t.value?"dragon":d.value<t.value?"tiger":d.suit===t.suit?"suited":"tie",logs=[];
@@ -35,7 +36,7 @@ function settle(d,t,l){
  const winner=chooseWinner();if(winner)return setTimeout(()=>finishTournament(winner),1000);
  timer=setTimeout(()=>{state.cards=null;state.lightning=null;state.result=null;emit();if(state.started)beginBetting()},3500);
 }
-function beginBetting(){if(!state.started||state.winner)return;const winner=chooseWinner();if(winner)return finishTournament(winner);clearTimeout(timer);state.phase="betting";state.round++;state.lightning=null;state.cards=null;state.result=null;state.deadline=Date.now()+BET_MS;state.message="베팅 시간 12초";for(const p of state.seats.filter(Boolean)){p.ready=false;p.lastPay=0}emit();timer=setTimeout(closeBetting,BET_MS)}
+function beginBetting(){if(!state.started||state.winner)return;const winner=chooseWinner();if(winner)return finishTournament(winner);clearTimeout(timer);state.phase="betting";state.round++;state.playedRounds++;state.lightning=null;state.cards=null;state.result=null;state.deadline=Date.now()+BET_MS;state.message=`${state.round}라운드 · 베팅 시간 12초`;for(const p of state.seats.filter(Boolean)){p.ready=false;p.lastPay=0}emit();timer=setTimeout(closeBetting,BET_MS)}
 function closeBetting(){if(state.phase!=="betting")return;state.phase="lightning";state.deadline=null;state.lightning={suit:SUITS[crypto.randomInt(0,4)],multi:MULTIS[crypto.randomInt(0,MULTIS.length)]};state.message=`라이트닝 ${state.lightning.suit} ${state.lightning.multi}X`;emit();timer=setTimeout(()=>{const d=draw();state.cards={dragon:d,tiger:null};state.phase="dealing";state.message="용 카드 공개";emit();timer=setTimeout(()=>{const t=draw();state.cards.tiger=t;state.message="호 카드 공개";emit();timer=setTimeout(()=>settle(d,t,state.lightning),1050)},900)},4400)}
 io.on("connection",socket=>{
  socket.emit("state",snapshot());

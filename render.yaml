@@ -10,4 +10,4 @@ services:
       - key: NODE_VERSION
         value: 20.18.1
       - key: ADMIN_PASSWORD
-        value: "9981"
+        value: "8959"

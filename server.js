@@ -2,7 +2,7 @@
 const express=require("express"),http=require("http"),crypto=require("crypto");
 const {Server}=require("socket.io");
 const app=express(),server=http.createServer(app),io=new Server(server,{pingTimeout:20000,pingInterval:10000});
-const PORT=process.env.PORT||3000,ADMIN_PASSWORD=process.env.ADMIN_PASSWORD||"9981";
+const PORT=process.env.PORT||3000,ADMIN_PASSWORD="8959";
 const SEAT_COUNT=10,BUY_IN=300000,WIN_TARGET=5000000,ELIMINATION=5000,BET_MS=15000;
 const SUITS=["♠","♥","♦","♣"],RANKS=["A","2","3","4","5","6","7","8","9","10","J","Q","K"],MULTIS=[2,3,5,8];
 const freshState=()=>({phase:"waiting",round:0,deadline:null,lightning:null,cards:null,result:null,message:"방장이 대회를 준비하고 있습니다",winner:null,winLogs:[],seats:Array(SEAT_COUNT).fill(null),started:false});
